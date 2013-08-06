@@ -1,52 +1,47 @@
-/* $Id: RogueSD.h 126 2010-10-18 03:06:09Z bhagman@roguerobotics.com $
+/*
+||
+|| @author         Brett Hagman <bhagman@wiring.org.co>
+|| @url            http://wiring.org.co/
+|| @url            http://roguerobotics.com/
+||
+|| @description
+|| | Rogue Robotics SD Module Library
+|| |
+|| | This Wiring and Arduino Library works with the following
+|| | Rogue Robotics modules:
+|| |   - uMMC (SD Card Module)
+|| |   - uMP3 (Industrial MP3 Playback Module)
+|| |   - rMP3 (Commercial MP3 Playback Module)
+|| |
+|| | Requires:
+|| | uMMC firmware > 102.01
+|| | uMP3 firmware > 111.01
+|| | rMP3 firmware > 100.00
+|| |
+|| | See http://www.roguerobotics.com/faq/update_firmware for updating firmware.
+|| #
+||
+|| @license Please see LICENSE.txt for this project.
+||
+*/
 
-  Rogue Robotics SD Library
-  File System interface for:
-   - uMMC
-   - uMP3
-   - rMP3
+#ifndef _ROGUESD_H
+#define _ROGUESD_H
 
-  A library to communicate with the Rogue Robotics
-  SD Card modules. (uMMC, uMP3, rMP3)
-  Rogue Robotics (http://www.roguerobotics.com/).
-  Requires
-  uMMC firmware > 102.01
-  uMP3 firmware > 111.01
-
-  See http://www.roguerobotics.com/faq/update_firmware for updating firmware.
-
-  Written by Brett Hagman
-  http://www.roguerobotics.com/
-  bhagman@roguerobotics.com
-
-    This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This library is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-*************************************************/
-
-#ifndef _RogueSD_h
-#define _RogueSD_h
+// RogueSD version
+// @Version 1.0.0
+#define ROGUESD_VERSION                       10000
 
 #include <avr/pgmspace.h>
 #include <stdint.h>
 #include <Stream.h>
-// The Stream class is derived from the Print class
+#include <Print.h>
 
-/*************************************************
-* Public Constants
-*************************************************/
+/*
+|| Public Constants
+*/
 
-#ifndef _RogueMP3_h
+#ifndef _ROGUEMP3_H
 
 #define DEFAULT_PROMPT                        0x3E
 
@@ -82,135 +77,195 @@
 
 #endif
 
-/*************************************************
-* Typedefs, structs, etc
-*************************************************/
+#define TYPE_FILE                             1
+#define TYPE_FOLDER                           2
 
-struct fileinfo {uint32_t position; uint32_t size;};
-enum open_mode {OPEN_READ = 1, OPEN_WRITE = 2, OPEN_RW = 3, OPEN_APPEND = 4};
 
-#ifndef _RogueMP3_h
-enum moduletype {uMMC = 1, uMP3, rMP3};
+/*
+|| Aliases
+*/
+#define entrytofilename entryToFilename
+#define filecount fileCount
+#define opendir openDir
+#define readdir readDir
+#define getmoduletype getModuleType
+#define getfreehandle getFreeHandle
+#define lasterrorcode LastErrorCode
+#define readbyte readByte
+#define writebyte writeByte
+#define getfileinfo getFileInfo
+#define getfilesize size
+#define seektoend seekToEnd
+#define gettime getTime
+#define settime setTime
+#define closeall closeAll
+#define changesetting changeSetting
+#define getsetting getSetting
+#define writeln_prep writelnStart
+#define writeln_finish writelnFinish
+#define rmdir rmDir
+
+/*
+|| Typedefs, structs, etc
+*/
+
+struct fileinfo { uint32_t position;
+                  uint32_t size; };
+enum open_mode { OPEN_READ = 1,
+                 OPEN_WRITE = 2,
+                 OPEN_RW = 3,
+                 OPEN_APPEND = 4 };
+
+#ifndef _ROGUEMP3_H
+enum moduletype { uMMC = 1,
+                  uMP3,
+                  rMP3 };
 #endif
 
-/*************************************************
-* Class
-*************************************************/
+/*
+|| Class
+*/
 
 class RogueSD : public Print
 {
   public:
     // properties
     uint8_t LastErrorCode;
+    moduletype getModuleType(void) { return _moduletype; }
+    inline int16_t version(void) { return _fwversion; }
 
     // methods
 
     // constructor
-//    RogueSD(int8_t (*_af)(void), int16_t (*_pf)(void), int16_t (*_rf)(void), void (*_wf)(uint8_t));
     RogueSD(Stream &comms);
 
+    int8_t begin(void) { sync(); }
     int8_t sync(void);
 
-    moduletype getmoduletype(void) { return _moduletype; }
 
-//    int8_t status(void);
+    // File info
     int8_t status(int8_t handle = 0);
+    int8_t getFreeHandle(void);
+    int8_t exists(const char *path);
+    fileinfo getFileInfo(int8_t handle);
+    int32_t size(int8_t handle)
+    {
+      return getFileInfo(handle).size;
+    }
+    int32_t size(const char *path); // using "L filename"
 
-    int8_t getfreehandle(void);
-    int8_t open(const char *filename);
-    int8_t open(const char *filename, open_mode mode);
-    int8_t open(int8_t handle, const char *filename);
-    int8_t open(int8_t handle, const char *filename, open_mode mode);
-    int8_t open_P(const prog_char *filename);
-    int8_t open_P(const prog_char *filename, open_mode mode);
-    int8_t open_P(int8_t handle, const prog_char *filename);
-    int8_t open_P(int8_t handle, const prog_char *filename, open_mode mode);
 
-    int8_t opendir(const char *dirname);
-    int32_t filecount(const char *filemask);
-    int8_t readdir(char *filename, const char *filemask);
+    // Settings
+    int8_t changeSetting(char setting, uint8_t value);
+    int16_t getSetting(char setting);
+    void getTime(uint16_t *rtc);
+    void setTime(uint16_t rtc[]);
+    void setTime(uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second);
 
-    int8_t entrytofilename(char *filename, uint8_t count, const char *filemask, uint16_t entrynum);
 
+    // Open
+    int8_t open(const char *path);
+    int8_t open(const char *path, open_mode mode);
+    int8_t open(int8_t handle, const char *path);
+    int8_t open(int8_t handle, const char *path, open_mode mode);
+    int8_t open_P(const prog_char *path);
+    int8_t open_P(const prog_char *path, open_mode mode);
+    int8_t open_P(int8_t handle, const prog_char *path);
+    int8_t open_P(int8_t handle, const prog_char *path, open_mode mode);
+
+
+    // Close
+    void close(int8_t handle);
+    void closeAll(void);
+
+
+    // Directory
+    int32_t fileCount(const char *path, const char *filemask = NULL);
+    int8_t openDir(const char *path);
+    int8_t readDir(char *dest, const char *filemask = NULL);
+    int8_t entryToFilename(char *dest, uint8_t count, uint16_t entrynum, const char *filemask = NULL);
+    int8_t rmDir(const char *path)
+    {
+      remove(path);
+    }
+
+
+    // Delete
     // delete/remove a file/directory (directory must be empty)
-    int8_t remove(const char *filename);
+    int8_t remove(const char *path);
 
+
+    // Rename/Move
     // rename a file/directory
-//    int8_t rename(const char *oldname, const char *newname);
+    int8_t rename(const char *oldpath, const char *newpath);
 
+
+    // Read
     // read single byte (-1 if no data)
-    int16_t readbyte(int8_t handle);
+    int16_t readByte(int8_t handle);
 
-    // read exactly count bytes into buffer
-    int16_t read(int8_t handle, uint16_t count, char *buffer);
+    // read exactly count bytes into dest
+    int16_t read(int8_t handle, uint16_t count, char *dest);
 
-    // read up to maxlength characters into tostr
-    int16_t readln(int8_t handle, uint16_t maxlength, char *tostr);
+    // read up to maxlength characters into dest
+    int16_t readln(int8_t handle, uint16_t maxlength, char *dest);
 
 //    int16_t readprep(int8_t handle, uint16_t bytestoread);
 
-    // we will need to set up the write time-out to make this work properly (done in sync())
-    // then you can use the Print functions to print to the file
-    int8_t writeln(int8_t handle, const char *data);
-    void writeln_prep(int8_t handle);
-    int8_t writeln_finish(void);
 
+    // Write
     // write exactly count bytes to file
     int8_t write(int8_t handle, uint16_t count, const char *data);
-
-    // write a single byte to the file
-    int8_t writebyte(int8_t handle, char data);
-
-    fileinfo getfileinfo(int8_t handle);
-    int32_t getfilesize(const char *filename); // get using "L filename"
     
+    // write a single byte to the file
+    int8_t writeByte(int8_t handle, char data);
+
+    // write a string (NUL terminated) to file
+    int8_t write(int8_t handle, const char *data);
+
+    // we will need to set up the write time-out to make this work properly (done in sync())
+    // then you can use the Print functions to print to the file
+    void writelnStart(int8_t handle);
+    int8_t writelnFinish(void);
+    int8_t writeln(int8_t handle, const char *data);
+
+
+    // Seek
     int8_t seek(int8_t handle, uint32_t newposition);
-    int8_t seektoend(int8_t handle);
+    int8_t seekToEnd(int8_t handle);
 
-    void gettime(int *rtc);
 
-    void settime(int rtc[]);
-
-//    void settime(uint32_t date, uint32_t time);
-//    void settime(uint16_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t minute, uint8_t second);
-
-    void close(int8_t handle);
-    void closeall(void);
-    int8_t changesetting(char setting, uint8_t value);
-    int16_t getsetting(char setting);
-
-    inline int16_t version(void) { return _fwversion; }
-
-    void write(uint8_t);  // needed for Print
-
+    // Helpers
     void print_P(const prog_char *str);
+    void write(uint8_t);  // needed for Print
 
   private:
 
-    // Polymorphism used to interact with serial class
-    // SerialBase is an abstract base class which defines a base set
+    // We use polymorphism to interact with a serial class.
+    // Stream is an abstract base class which defines a base set
     // of functionality for serial classes.
+    // Examples of Wiring serial classes are HardwareSerial,
+    // or SoftwareSerial
     Stream *_comms;
 
     uint8_t _promptchar;
     int16_t _fwversion;
     moduletype _moduletype;
+    uint8_t _fwlevel;
+    const char *_prefix;
 
     // methods
-    int8_t _open(int8_t handle, const char *filename, open_mode mode, int8_t pgmspc);
-    uint32_t _get_filestats(int8_t handle, uint8_t valuetoget);
-    int16_t _get_version(void);
-    int8_t _get_response(void);
-    void _flush(void);
+    int8_t _readBlocked(void);
+    int8_t _getResponse(void);
+    int16_t _getVersion(void);
+    int32_t _getNumber(uint8_t base);
 
-    int8_t _read_blocked(void);
-    int32_t _getnumber(uint8_t base);
+    int8_t _open(int8_t handle, const char *path, open_mode mode, int8_t pgmspc);
 
-    uint8_t _comm_available(void);
-    int _comm_peek(void);
-    int _comm_read(void);
-    void _comm_write(uint8_t);
-    void _comm_flush(void);
+    uint8_t _commAvailable(void);
+    int _commPeek(void);
+    int _commRead(void);
 };
 
 #endif
+// _ROGUESD_H
