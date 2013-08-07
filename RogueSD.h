@@ -80,30 +80,36 @@
 #define TYPE_FILE                             1
 #define TYPE_FOLDER                           2
 
+#ifndef GOOD
+#define GOOD                                  1
+#endif
+#ifndef BAD
+#define BAD                                   0
+#endif
 
 /*
 || Aliases
 */
-#define entrytofilename entryToFilename
-#define filecount fileCount
-#define opendir openDir
-#define readdir readDir
-#define getmoduletype getModuleType
-#define getfreehandle getFreeHandle
-#define lasterrorcode LastErrorCode
-#define readbyte readByte
-#define writebyte writeByte
-#define getfileinfo getFileInfo
-#define getfilesize size
-#define seektoend seekToEnd
-#define gettime getTime
-#define settime setTime
-#define closeall closeAll
-#define changesetting changeSetting
-#define getsetting getSetting
-#define writeln_prep writelnStart
-#define writeln_finish writelnFinish
-#define rmdir rmDir
+//#define entrytofilename entryToFilename
+//#define filecount fileCount
+//#define opendir openDir
+//#define readdir readDir
+//#define getmoduletype getModuleType
+//#define getfreehandle getFreeHandle
+//#define lasterrorcode LastErrorCode
+//#define readbyte readByte
+//#define writebyte writeByte
+//#define getfileinfo getFileInfo
+//#define getfilesize size
+//#define seektoend seekToEnd
+//#define gettime getTime
+//#define settime setTime
+//#define closeall closeAll
+//#define changesetting changeSetting
+//#define getsetting getSetting
+//#define writeln_prep writelnStart
+//#define writeln_finish writelnFinish
+//#define rmdir rmDir
 
 /*
 || Typedefs, structs, etc
@@ -139,9 +145,13 @@ class RogueSD : public Print
     // constructor
     RogueSD(Stream &comms);
 
-    int8_t begin(void) { sync(); }
-    int8_t sync(void);
+    int8_t begin(bool blocking = true) { sync(blocking); }
+    int8_t sync(bool blocking = true);
 
+    // Card info (in KiB)
+    int32_t cardInfo(uint8_t getSize);
+    int32_t cardSize(void) { return cardInfo(true); }
+    int32_t freeSpace(void) { return cardInfo(false); }
 
     // File info
     int8_t status(int8_t handle = 0);
@@ -237,8 +247,12 @@ class RogueSD : public Print
 
     // Helpers
     void print_P(const prog_char *str);
+#if ARDUINO >= 100
+    size_t write(uint8_t);
+#else
     void write(uint8_t);  // needed for Print
-
+#endif
+    
   private:
 
     // We use polymorphism to interact with a serial class.
@@ -256,6 +270,7 @@ class RogueSD : public Print
 
     // methods
     int8_t _readBlocked(void);
+    int16_t _readTimeout(uint16_t timeout);  // Time out = timeout * 0.01 seconds
     int8_t _getResponse(void);
     int16_t _getVersion(void);
     int32_t _getNumber(uint8_t base);

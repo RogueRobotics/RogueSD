@@ -27,12 +27,19 @@
 
 #include <stdint.h>
 #include <ctype.h>
-#include <util/delay.h>
+#if ARDUINO >= 100
+#include <Arduino.h>
+#elif defined(WIRING)
+#include <Wiring.h>
+#else
+#include <WProgram.h>
+#endif
+//#include <util/delay.h>
 #include "RogueSD.h"
 
-/*************************************************
-* Private Constants
-*************************************************/
+/*
+|| Private Constants
+*/
 
 #define UMMC_MIN_FW_VERSION_FOR_NEW_COMMANDS  10201
 #define UMP3_MIN_FW_VERSION_FOR_NEW_COMMANDS  11101
@@ -41,9 +48,15 @@
 #define STATS_POSITION                        1
 #define STATS_REMAINING                       2
 
-/*************************************************
-* Constructor
-*************************************************/
+#define ASCII_ESC                             0x1b
+
+// Default to 1 second.
+#define ROGUESD_DEFAULT_READ_TIMEOUT          100
+
+
+/*
+|| Constructor
+*/
 
 RogueSD::RogueSD(Stream &comms)
   : LastErrorCode(0),
@@ -56,11 +69,13 @@ RogueSD::RogueSD(Stream &comms)
   _prefix = "";
 }
 
-/*************************************************
-* Public Methods
-*************************************************/
 
-int8_t RogueSD::sync(void)
+
+/*
+|| Public Methods
+*/
+
+int8_t RogueSD::sync(bool blocking)
 {
   // procedure:
   // 1. sync (send ESC, clear prompt)
@@ -73,8 +88,18 @@ int8_t RogueSD::sync(void)
   _comms->flush();
 
   // 1. sync
-  print((char)0x1b);                    // send ESC to clear buffer on uMMC
-  _readBlocked();                       // consume prompt
+  print((char)ASCII_ESC);               // send ESC to clear buffer on uMMC
+  if (blocking)
+  {
+    _readBlocked();                     // consume prompt
+  }
+  else
+  {
+    if (_readTimeout(ROGUESD_DEFAULT_READ_TIMEOUT) < 0)
+    {
+      return 0;
+    }
+  }
 
   // 2. get version (ignore prompt - just drop it)
   _getVersion();
@@ -133,6 +158,40 @@ int8_t RogueSD::sync(void)
   {
     return 0;
   }
+}
+
+
+int32_t RogueSD::cardInfo(uint8_t getSize)
+{
+  int32_t datum = 0;
+
+  print(_prefix);
+  print('Q');
+  print('\r');
+
+  while (!_commAvailable());
+  if (_commPeek() != 'E')
+  {
+    datum = _getNumber(10);             // Free space (in KiB)
+
+    _readBlocked();                     // consume '/' or ' '
+
+    if (getSize)
+      datum = _getNumber(10);           // Card size
+    else
+      _getNumber(10);
+
+    _readBlocked();                     // consume prompt
+  }
+  else
+  {
+    _getResponse();
+    // if we have an error, return -1
+    // error code is actually in .LastErrorCode
+    datum = -1;
+  }
+
+  return datum;
 }
 
 
@@ -371,7 +430,6 @@ void RogueSD::getTime(uint16_t *rtc)
 
 void RogueSD::setTime(uint16_t rtc[])
 {
-
   if (_fwlevel > 0)
   {
     print('T');
@@ -1049,10 +1107,22 @@ void RogueSD::print_P(const prog_char *str)
 * Public (virtual - required by Print)
 *************************************************/
 
+#if ARDUINO >= 100
+
+size_t RogueSD::write(uint8_t c)
+{
+  _comms->write(c);
+  return 1;
+}
+
+#else
+
 void RogueSD::write(uint8_t c)
 {
   _comms->write(c);
 }
+
+#endif
 
 
 /*************************************************
@@ -1067,6 +1137,21 @@ int8_t RogueSD::_readBlocked(void)
   // while((r = this->_readf()) < 0);   // this would be faster if we could guarantee that the _readf() function
                                         // would return -1 if there was no byte read
   return _commRead();
+}
+
+
+int16_t RogueSD::_readTimeout(uint16_t timeout)
+{
+  while (timeout)
+  {
+    if (_commAvailable())
+      return (uint8_t) _commRead();
+
+    timeout--;
+    delay(10);
+  }
+
+  return -1;
 }
 
 
