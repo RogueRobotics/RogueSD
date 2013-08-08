@@ -145,8 +145,8 @@ class RogueSD : public Print
     // constructor
     RogueSD(Stream &comms);
 
-    int8_t begin(bool blocking = true) { sync(blocking); }
-    int8_t sync(bool blocking = true);
+    int8_t begin(bool blocking = false) { return sync(blocking); }
+    int8_t sync(bool blocking = false);
 
     // Card info (in KiB)
     int32_t cardInfo(uint8_t getSize);

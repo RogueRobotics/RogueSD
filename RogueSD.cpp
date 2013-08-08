@@ -27,14 +27,15 @@
 
 #include <stdint.h>
 #include <ctype.h>
+
 #if ARDUINO >= 100
-#include <Arduino.h>
+ #include <Arduino.h>
 #elif defined(WIRING)
-#include <Wiring.h>
+ #include <Wiring.h>
 #else
-#include <WProgram.h>
+ #include <WProgram.h>
 #endif
-//#include <util/delay.h>
+
 #include "RogueSD.h"
 
 /*
@@ -81,8 +82,7 @@ int8_t RogueSD::sync(bool blocking)
   // 1. sync (send ESC, clear prompt)
   // 2. get version ("v"), and module type
   // 3. change settings as needed
-  // 4. check status
-  // 5. close files (if needed - E08, or other error, not needed)
+  // 4. close files
 
   // 0. empty any data in the serial buffer
   _comms->flush();
@@ -138,26 +138,11 @@ int8_t RogueSD::sync(bool blocking)
     _readBlocked();                     // consume prompt
   }
 
-  // 4. check status
+  // 4. close files
 
-  print(_prefix);
-  print('Z');
-  print('\r');                          // Get status
+  closeAll();                           // ensure all handles are closed
 
-  if (_getResponse())
-  {
-    // good
-    _readBlocked();                     // consume prompt
-
-    // 5. close all files
-    closeAll();                         // ensure all handles are closed
-
-    return 1;
-  }
-  else
-  {
-    return 0;
-  }
+  return 1;
 }
 
 
@@ -613,7 +598,10 @@ int32_t RogueSD::fileCount(const char *path, const char *filemask)
     print(path);
     if (filemask != NULL)
     {
-      print('/');
+      if (strlen(path) && path[strlen(path) - 1] != '/')
+      {
+        print('/');
+      }
       print(filemask);
     }
     print('\r');
