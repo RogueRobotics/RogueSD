@@ -6,7 +6,7 @@
 || @description
 || | Rogue Robotics SD Module Library Example.
 || |
-|| | Lists all files on the card.
+|| | Demonstrates writing/reading to/from the card.
 || |
 || | This Wiring and Arduino Library example works with the following
 || | Rogue Robotics modules:
@@ -42,28 +42,30 @@ NewSoftSerial rogueSerial = NewSoftSerial(roguesdRXPin, roguesdTXPin);
 // We connect the above serial object to the RogueSD object here.
 RogueSD roguesd = RogueSD(rogueSerial);
 
-// This is the path from which we want to list all files and folders.
-const char fileListingPath[] = "/";
-// This is the file mask (i.e. pattern) we want to list.
-// e.g. "*.mp3"
-const char filePattern[] = "*";
-
 
 void setup()
 {
-  // This string (array of chars) is used to store the filenames
-  // we get from readDir() below.
-  char filename[64];
-  // Number of files and folders.
-  int32_t filecount;
+  /*
+  || Local Variables
+  */
+  // A "handle" to identify our file.
+  int8_t filehandle;
+  // The filename of the file we will write to and read from.
+  const char filename[] = "/appendtest.txt";
+  // A string (char array) to get data from the file.
+  char fileData[60];
 
-  // Just a simple wait to allow for any unforseen fiddlybits.
+
+  // To protect the card from the multiple resets during power up via USB,
+  // let's wait a bit to make sure we are ready to write.
   delay(1000);
 
   Serial.begin(9600);
 
-  // Prepare the serial port connected to the Rogue SD module.
   rogueSerial.begin(9600);
+
+  // Prepare the random() function to give us better random values.
+  randomSeed(analogRead(0));
 
   Serial.println(Constant("Connecting to Rogue SD Module..."));
 
@@ -101,57 +103,57 @@ void setup()
 
   // Now, on with our example.
 
-  // Check if a card is inserted.
-  if (roguesd.status())
+  // Open a file
+  Serial.println(Constant("Opening file to append some data..."));
+  filehandle = roguesd.open(filename, OPEN_APPEND);
+
+  if (filehandle > 0)
   {
-    // List all files on the card.
+    Serial.print(Constant("Using handle "));
+    Serial.println(filehandle);
 
-    // fileCount() takes 2 arguments:
-    // 1. source path
-    // 2. file mask (e.g. list only MP3 files: "*.mp3")
-    // e.g. roguesd.fileCount("/", "*.mp3");
-    filecount = roguesd.fileCount(fileListingPath, filePattern);
+    // Prepare the module to write data to the file
+    roguesd.writelnStart(filehandle);
 
-    if (filecount >= 0)
+    // you can use any of the standard print methods to send data to the file.
+    roguesd.print(Constant("You'll see this many times in this file. RAND: "));
+    roguesd.print(random(10000));
+    roguesd.writelnFinish();
+
+    Serial.println(Constant("Append complete."));
+
+    roguesd.close(filehandle);
+    Serial.println(Constant("File closed."));
+
+    // now let's read the file
+    filehandle = roguesd.open(filename, OPEN_READ);
+
+    Serial.println(Constant("Opening file for read..."));
+
+    if (filehandle > 0)
     {
-      Serial.print(Constant("File count: "));
-      Serial.println(filecount, DEC);
+      Serial.print(Constant("Using handle "));
+      Serial.println(filehandle);
 
-      if (filecount > 0)
+      Serial.println(Constant("-------------"));
+
+      // this reads 60 characters at a time (if available, per line)
+      while (roguesd.readln(filehandle, 60, fileData) > 0)
       {
-        Serial.println(Constant("--- [F]iles and Fol[D]ers ---"));
+        Serial.println(fileData);
 
-        // openDir() opens the directory for reading.
-        // The argument is the path.
-        roguesd.openDir(fileListingPath);
-
-        // readDir() gets the next directory entry that matches the mask.
-        // It takes 2 arguments:
-        // 1. a string (char array) to store the name
-        //    - make sure that it's big enough to store the largest name
-        //      in the directory.
-        // 2. file mask (same as in fileCount())
-
-        // type, which is returned from readDir(), will tell us if
-        // it is a TYPE_FOLDER or a TYPE_FILE.
-        int type;
-
-        while ((type = roguesd.readDir(filename, filePattern)) > 0)
-        {
-          if (type == TYPE_FOLDER)  // if it's a folder/directory
-            Serial.print(Constant("[D] "));
-          else
-            Serial.print(Constant("[F] "));
-          Serial.println(filename);
-        }
-
-        Serial.println(Constant("-----------------------------"));
+        delay(200);  // pause 200 milliseconds between lines
       }
+
+      Serial.println(Constant("-------------"));
+
+      roguesd.close(filehandle);
+      Serial.println(Constant("File closed."));
     }
     else
     {
-      // fileCount() failed, because card was ejected, or something else.
-      Serial.print(Constant("fileCount failed: Error code E"));
+      Serial.println(Constant("An error occurred while opening the file to read:"));
+      Serial.print(Constant("Error code E"));
       if (roguesd.LastErrorCode < 16)
         Serial.print('0');
       Serial.println(roguesd.LastErrorCode, HEX);
@@ -159,14 +161,15 @@ void setup()
   }
   else
   {
-    Serial.print(Constant("The fun stops here: "));
+    Serial.println(Constant("An error occurred while opening the file to write:"));
+
     if (roguesd.LastErrorCode == ERROR_CARD_NOT_INSERTED)
     {
       Serial.println(Constant("No card inserted."));
     }
     else
     {
-      Serial.println(Constant("Error code E"));
+      Serial.print(Constant("Error code E"));
       if (roguesd.LastErrorCode < 16)
         Serial.print('0');
       Serial.println(roguesd.LastErrorCode, HEX);
@@ -179,3 +182,4 @@ void loop()
 {
   // Nothing to do in loop() - everything is done in setup().
 }
+

@@ -6,7 +6,8 @@
 || @description
 || | Rogue Robotics SD Module Library Example.
 || |
-|| | Lists all files on the card.
+|| | Demonstrates connecting to the module, and getting some
+|| | basic information about the inserted card.
 || |
 || | This Wiring and Arduino Library example works with the following
 || | Rogue Robotics modules:
@@ -42,27 +43,11 @@ NewSoftSerial rogueSerial = NewSoftSerial(roguesdRXPin, roguesdTXPin);
 // We connect the above serial object to the RogueSD object here.
 RogueSD roguesd = RogueSD(rogueSerial);
 
-// This is the path from which we want to list all files and folders.
-const char fileListingPath[] = "/";
-// This is the file mask (i.e. pattern) we want to list.
-// e.g. "*.mp3"
-const char filePattern[] = "*";
-
 
 void setup()
 {
-  // This string (array of chars) is used to store the filenames
-  // we get from readDir() below.
-  char filename[64];
-  // Number of files and folders.
-  int32_t filecount;
-
-  // Just a simple wait to allow for any unforseen fiddlybits.
-  delay(1000);
-
   Serial.begin(9600);
 
-  // Prepare the serial port connected to the Rogue SD module.
   rogueSerial.begin(9600);
 
   Serial.println(Constant("Connecting to Rogue SD Module..."));
@@ -94,68 +79,19 @@ void setup()
       Serial.println(Constant("rMP3"));
       break;
   }
-
   Serial.print(Constant("Rogue SD Module Version: "));
   Serial.println(roguesd.version());
 
-
-  // Now, on with our example.
-
-  // Check if a card is inserted.
+  // Check if a card is inserted and print out some information.
   if (roguesd.status())
   {
-    // List all files on the card.
-
-    // fileCount() takes 2 arguments:
-    // 1. source path
-    // 2. file mask (e.g. list only MP3 files: "*.mp3")
-    // e.g. roguesd.fileCount("/", "*.mp3");
-    filecount = roguesd.fileCount(fileListingPath, filePattern);
-
-    if (filecount >= 0)
-    {
-      Serial.print(Constant("File count: "));
-      Serial.println(filecount, DEC);
-
-      if (filecount > 0)
-      {
-        Serial.println(Constant("--- [F]iles and Fol[D]ers ---"));
-
-        // openDir() opens the directory for reading.
-        // The argument is the path.
-        roguesd.openDir(fileListingPath);
-
-        // readDir() gets the next directory entry that matches the mask.
-        // It takes 2 arguments:
-        // 1. a string (char array) to store the name
-        //    - make sure that it's big enough to store the largest name
-        //      in the directory.
-        // 2. file mask (same as in fileCount())
-
-        // type, which is returned from readDir(), will tell us if
-        // it is a TYPE_FOLDER or a TYPE_FILE.
-        int type;
-
-        while ((type = roguesd.readDir(filename, filePattern)) > 0)
-        {
-          if (type == TYPE_FOLDER)  // if it's a folder/directory
-            Serial.print(Constant("[D] "));
-          else
-            Serial.print(Constant("[F] "));
-          Serial.println(filename);
-        }
-
-        Serial.println(Constant("-----------------------------"));
-      }
-    }
-    else
-    {
-      // fileCount() failed, because card was ejected, or something else.
-      Serial.print(Constant("fileCount failed: Error code E"));
-      if (roguesd.LastErrorCode < 16)
-        Serial.print('0');
-      Serial.println(roguesd.LastErrorCode, HEX);
-    }
+    Serial.println();
+    Serial.print(Constant("Card Size: "));
+    Serial.print(roguesd.cardSize());
+    Serial.println(Constant(" KiB"));
+    Serial.print(Constant("Free Space: "));
+    Serial.print(roguesd.freeSpace());
+    Serial.println(Constant(" KiB"));
   }
   else
   {
