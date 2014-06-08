@@ -61,10 +61,10 @@
 
 RogueSD::RogueSD(Stream &comms)
   : LastErrorCode(0),
-    _promptchar(DEFAULT_PROMPT),
-    _fwversion(0),
-    _moduletype(uMMC),
-    _fwlevel(0)
+    _promptChar(DEFAULT_PROMPT),
+    _fwVersion(0),
+    _moduleType(uMMC),
+    _fwLevel(0)
 {
   _comms = &comms;
   _prefix = "";
@@ -103,7 +103,7 @@ int8_t RogueSD::sync(bool blocking)
 
   // 2. get version (ignore prompt - just drop it)
   _getVersion();
-  if (_moduletype == uMMC)
+  if (_moduleType == uMMC)
     _prefix = "";
   else
     _prefix = "FC";
@@ -111,18 +111,18 @@ int8_t RogueSD::sync(bool blocking)
   // 3. change settings as needed
   // OLD: write timeout setting = 10 ms timeout
   // NEW: listing style = old style (0)
-  if ((_moduletype == uMMC && _fwversion < UMMC_MIN_FW_VERSION_FOR_NEW_COMMANDS) ||
-      (_moduletype == uMP3 && _fwversion < UMP3_MIN_FW_VERSION_FOR_NEW_COMMANDS))
+  if ((_moduleType == uMMC && _fwVersion < UMMC_MIN_FW_VERSION_FOR_NEW_COMMANDS) ||
+      (_moduleType == uMP3 && _fwVersion < UMP3_MIN_FW_VERSION_FOR_NEW_COMMANDS))
   {
     // we need to set the write timeout to allow us to control when a line is finished
     // in writeln.
     changeSetting('1', 1);              // 10 ms timeout
-    _fwlevel = 0;
+    _fwLevel = 0;
   }
   else
   {
     // we're using the new version
-    _fwlevel = 1;
+    _fwLevel = 1;
     // Let's make sure the Listing Style setting is set to the old style
     if (getSetting('L') != 0)
     {
@@ -131,10 +131,10 @@ int8_t RogueSD::sync(bool blocking)
 
     // get the prompt char
     print('S');
-    if (_moduletype != uMMC) print('T');
+    if (_moduleType != uMMC) print('T');
     print('P');
     print('\r');  // get our prompt (if possible)
-    _promptchar = _getNumber(10);
+    _promptChar = _getNumber(10);
     _readBlocked();                     // consume prompt
   }
 
@@ -252,9 +252,9 @@ int8_t RogueSD::exists(const char *path)
 }
 
 
-fileinfo RogueSD::getFileInfo(int8_t handle)
+fileInfo RogueSD::getFileInfo(int8_t handle)
 {
-  fileinfo fi;
+  fileInfo fi;
 
   print(_prefix);
   print('I');
@@ -291,7 +291,7 @@ int32_t RogueSD::size(const char *path)
   uint32_t filesize = 0;
   int8_t resp;
 
-  if (_fwlevel == 0)
+  if (_fwLevel == 0)
   {
     // old
     LastErrorCode = ERROR_NOT_SUPPORTED;
@@ -360,7 +360,7 @@ int32_t RogueSD::size(const char *path)
 int8_t RogueSD::changeSetting(char setting, uint8_t value)
 {
   print('S');
-  if (_moduletype != uMMC) print('T');
+  if (_moduleType != uMMC) print('T');
   print(setting);
   print((int)value, DEC);
   print('\r');
@@ -374,7 +374,7 @@ int16_t RogueSD::getSetting(char setting)
   uint8_t value;
 
   print('S');
-  if (_moduletype != uMMC) print('T');
+  if (_moduleType != uMMC) print('T');
   print(setting);
   print('\r');
 
@@ -395,7 +395,7 @@ int16_t RogueSD::getSetting(char setting)
 
 void RogueSD::getTime(uint16_t *rtc)
 {
-  if (_fwlevel > 0)
+  if (_fwLevel > 0)
   {
     print('T');
     print('\r');
@@ -415,7 +415,7 @@ void RogueSD::getTime(uint16_t *rtc)
 
 void RogueSD::setTime(uint16_t rtc[])
 {
-  if (_fwlevel > 0)
+  if (_fwLevel > 0)
   {
     print('T');
     for (uint8_t i = 0; i < 6; i++)
@@ -427,7 +427,7 @@ void RogueSD::setTime(uint16_t rtc[])
     print('\r');
 
     // A bug in earlier versions returned the time after setting
-    while (_readBlocked() != _promptchar); // kludge: read everything including prompt
+    while (_readBlocked() != _promptChar); // kludge: read everything including prompt
 
     // _readBlocked();                    // consume prompt
   }
@@ -461,7 +461,7 @@ int8_t RogueSD::open(const char *path)
 }
 
 
-int8_t RogueSD::open(const char *path, open_mode mode)
+int8_t RogueSD::open(const char *path, openMode mode)
 {
   int8_t fh = getFreeHandle();
 
@@ -479,7 +479,7 @@ int8_t RogueSD::open(int8_t handle, const char *path)
 }
 
 
-int8_t RogueSD::open(int8_t handle, const char *path, open_mode mode)
+int8_t RogueSD::open(int8_t handle, const char *path, openMode mode)
 {
   return _open(handle, path, mode, 0);
 }
@@ -491,7 +491,7 @@ int8_t RogueSD::open_P(const char *path)
 }
 
 
-int8_t RogueSD::open_P(const char *path, open_mode mode)
+int8_t RogueSD::open_P(const char *path, openMode mode)
 {
   int8_t fh = getFreeHandle();
 
@@ -508,14 +508,14 @@ int8_t RogueSD::open_P(int8_t handle, const char PROGMEM *path)
 }
 
 
-int8_t RogueSD::open_P(int8_t handle, const char PROGMEM *path, open_mode mode)
+int8_t RogueSD::open_P(int8_t handle, const char PROGMEM *path, openMode mode)
 {
   return _open(handle, path, mode, 1);
 }
 
 
 // private
-int8_t RogueSD::_open(int8_t handle, const char *path, open_mode mode, int8_t pgmspc)
+int8_t RogueSD::_open(int8_t handle, const char *path, openMode mode, int8_t pgmspc)
 {
   int8_t resp;
 
@@ -564,7 +564,7 @@ void RogueSD::close(int8_t handle)
 
 void RogueSD::closeAll(void)
 {
-  if (_fwlevel > 0)
+  if (_fwLevel > 0)
   {
     // new
     print(_prefix);
@@ -591,7 +591,7 @@ int32_t RogueSD::fileCount(const char *path, const char *filemask)
 {
   int32_t fcount = 0;
 
-  if (_fwlevel > 0)
+  if (_fwLevel > 0)
   {
     print(_prefix);
     print("LC ");
@@ -635,7 +635,7 @@ int8_t RogueSD::openDir(const char *dirname)
 {
   int8_t resp = 0;
 
-  if (_fwlevel > 0)
+  if (_fwLevel > 0)
   {
     // new
     print(_prefix);
@@ -670,7 +670,7 @@ int8_t RogueSD::readDir(char *dest, const char *filemask)
   char c;
   int8_t entrytype = TYPE_FILE;
 
-  if (_fwlevel > 0)
+  if (_fwLevel > 0)
   {
     print(_prefix);
     print("LI ");
@@ -734,7 +734,7 @@ int8_t RogueSD::entryToFilename(char *dest, uint8_t count, uint16_t entrynum, co
   char c;
   int8_t entrytype = TYPE_FILE;
 
-  if (_fwlevel > 0)
+  if (_fwLevel > 0)
   {
     // new
     print(_prefix);
@@ -870,7 +870,7 @@ int16_t RogueSD::read(int8_t handle, uint16_t count, char *dest)
   // read up to count bytes into dest
   uint32_t bytesremaining;
   uint16_t i;
-  fileinfo fi = getFileInfo(handle);
+  fileInfo fi = getFileInfo(handle);
 
   // check first how many bytes are remaining
   bytesremaining = fi.size - fi.position;
@@ -914,7 +914,7 @@ int16_t RogueSD::readln(int8_t handle, uint16_t maxlength, char *dest)
 {
   int8_t r, i;
 
-  if (_fwlevel == 0)
+  if (_fwLevel == 0)
     return -1;
 
   print(_prefix);
@@ -938,7 +938,7 @@ int16_t RogueSD::readln(int8_t handle, uint16_t maxlength, char *dest)
   i = 0;
   r = _readBlocked();
 
-  while (r != _promptchar)              // we could have a blank line
+  while (r != _promptChar)              // we could have a blank line
   {
     dest[i++] = r;
     r = _readBlocked();
@@ -987,7 +987,7 @@ void RogueSD::writelnStart(int8_t handle)
   print(_prefix);
   print('W');
 
-  if (_fwlevel > 0)
+  if (_fwLevel > 0)
   {
     // new
     print('L');
@@ -1006,7 +1006,7 @@ void RogueSD::writelnStart(int8_t handle)
 
 int8_t RogueSD::writelnFinish(void)
 {
-  if (_fwlevel > 0)
+  if (_fwLevel > 0)
   {
 
   // new
@@ -1041,7 +1041,7 @@ int8_t RogueSD::seek(int8_t handle, uint32_t newposition)
 {
   print(_prefix);
 
-  if (_fwlevel > 0)
+  if (_fwLevel > 0)
   {
     // new
     // J fh position
@@ -1070,7 +1070,7 @@ int8_t RogueSD::seek(int8_t handle, uint32_t newposition)
 
 int8_t RogueSD::seekToEnd(int8_t handle)
 {
-  if (_fwlevel > 0)
+  if (_fwLevel > 0)
   {
     // new
     print(_prefix);
@@ -1165,7 +1165,7 @@ int8_t RogueSD::_getResponse(void)
 
   r = _readBlocked();
 
-  if (r == ' ' || r == _promptchar)
+  if (r == ' ' || r == _promptChar)
     resp = 1;
 
   else if (r == 'E')
@@ -1195,10 +1195,10 @@ int16_t RogueSD::_getVersion(void)
   // Version format: mmm.nn[-bxxx] SN:TTTT-ssss...
 
   // get first portion mmm.nn
-  _fwversion = _getNumber(10);
+  _fwVersion = _getNumber(10);
   _readBlocked();                       // consume '.'
-  _fwversion *= 100;
-  _fwversion += _getNumber(10);
+  _fwVersion *= 100;
+  _fwVersion += _getNumber(10);
   // ignore beta version (-bxxx), if it's there
   if (_readBlocked() == '-')
   {
@@ -1213,16 +1213,16 @@ int16_t RogueSD::_getVersion(void)
   _readBlocked();
 
   if (_readBlocked() == 'R')
-    _moduletype = rMP3;
+    _moduleType = rMP3;
   else
   {
     // either UMM1 or UMP1
     // so drop the M following the U
     _readBlocked();
     if (_readBlocked() == 'M')
-      _moduletype = uMMC;
+      _moduleType = uMMC;
     else
-      _moduletype = uMP3;
+      _moduleType = uMP3;
   }
 
   // ignore the rest
@@ -1231,7 +1231,7 @@ int16_t RogueSD::_getVersion(void)
   // consume up to and including prompt
   while (isalnum(_readBlocked()));
 
-  return _fwversion;
+  return _fwVersion;
 }
 
 

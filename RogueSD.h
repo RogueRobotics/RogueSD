@@ -29,7 +29,7 @@
 #define _ROGUESD_H
 
 // RogueSD version
-// @Version 1.0.0
+// @Version 2.0.0
 #define ROGUESD_VERSION                       10000
 
 #include <avr/pgmspace.h>
@@ -115,17 +115,24 @@
 || Typedefs, structs, etc
 */
 
-struct fileinfo { uint32_t position;
-                  uint32_t size; };
-enum open_mode { OPEN_READ = 1,
+struct fileInfo {
+                  uint32_t position;
+                  uint32_t size;
+                };
+
+enum openMode {
+                 OPEN_READ = 1,
                  OPEN_WRITE = 2,
                  OPEN_RW = 3,
-                 OPEN_APPEND = 4 };
+                 OPEN_APPEND = 4
+               };
 
 #ifndef _ROGUEMP3_H
-enum moduletype { uMMC = 1,
+enum moduleType {
+                  uMMC = 1,
                   uMP3,
-                  rMP3 };
+                  rMP3
+                };
 #endif
 
 /*
@@ -137,13 +144,11 @@ class RogueSD : public Print
   public:
     // properties
     uint8_t LastErrorCode;
-    moduletype getModuleType(void) { return _moduletype; }
-    inline int16_t version(void) { return _fwversion; }
+    moduleType getModuleType(void) { return _moduleType; }
+    inline int16_t version(void) { return _fwVersion; }
 
     // methods
-
-    // constructor
-    RogueSD(Stream &comms);
+    RogueSD(Stream &comms);             // constructor
 
     int8_t begin(bool blocking = false) { return sync(blocking); }
     int8_t sync(bool blocking = false);
@@ -157,7 +162,7 @@ class RogueSD : public Print
     int8_t status(int8_t handle = 0);
     int8_t getFreeHandle(void);
     int8_t exists(const char *path);
-    fileinfo getFileInfo(int8_t handle);
+    fileInfo getFileInfo(int8_t handle);
     int32_t size(int8_t handle)
     {
       return getFileInfo(handle).size;
@@ -175,13 +180,13 @@ class RogueSD : public Print
 
     // Open
     int8_t open(const char *path);
-    int8_t open(const char *path, open_mode mode);
+    int8_t open(const char *path, openMode mode);
     int8_t open(int8_t handle, const char *path);
-    int8_t open(int8_t handle, const char *path, open_mode mode);
+    int8_t open(int8_t handle, const char *path, openMode mode);
     int8_t open_P(const char PROGMEM *path);
-    int8_t open_P(const char PROGMEM *path, open_mode mode);
+    int8_t open_P(const char PROGMEM *path, openMode mode);
     int8_t open_P(int8_t handle, const char PROGMEM *path);
-    int8_t open_P(int8_t handle, const char PROGMEM *path, open_mode mode);
+    int8_t open_P(int8_t handle, const char PROGMEM *path, openMode mode);
 
 
     // Close
@@ -262,10 +267,10 @@ class RogueSD : public Print
     // or SoftwareSerial
     Stream *_comms;
 
-    uint8_t _promptchar;
-    int16_t _fwversion;
-    moduletype _moduletype;
-    uint8_t _fwlevel;
+    uint8_t _promptChar;
+    int16_t _fwVersion;
+    moduleType _moduleType;
+    uint8_t _fwLevel;
     const char *_prefix;
 
     // methods
@@ -275,7 +280,7 @@ class RogueSD : public Print
     int16_t _getVersion(void);
     int32_t _getNumber(uint8_t base);
 
-    int8_t _open(int8_t handle, const char *path, open_mode mode, int8_t pgmspc);
+    int8_t _open(int8_t handle, const char *path, openMode mode, int8_t pgmspc);
 
     uint8_t _commAvailable(void);
     int _commPeek(void);
