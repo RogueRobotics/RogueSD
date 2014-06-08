@@ -28,10 +28,10 @@
 #include <stdint.h>
 #include <ctype.h>
 
-#if ARDUINO >= 100
- #include <Arduino.h>
-#elif defined(WIRING)
+#if WIRING
  #include <Wiring.h>
+#elif ARDUINO >= 100
+ #include <Arduino.h>
 #else
  #include <WProgram.h>
 #endif
@@ -502,13 +502,13 @@ int8_t RogueSD::open_P(const char *path, open_mode mode)
 }
 
 
-int8_t RogueSD::open_P(int8_t handle, const prog_char *path)
+int8_t RogueSD::open_P(int8_t handle, const char PROGMEM *path)
 {
   return _open(handle, path, OPEN_READ, 1);
 }
 
 
-int8_t RogueSD::open_P(int8_t handle, const prog_char *path, open_mode mode)
+int8_t RogueSD::open_P(int8_t handle, const char PROGMEM *path, open_mode mode)
 {
   return _open(handle, path, mode, 1);
 }
@@ -558,7 +558,7 @@ void RogueSD::close(int8_t handle)
   print('C');
   print((char)('0' + handle));
   print('\r');
-  _readBlocked();
+  _getResponse();
 }
 
 
@@ -595,8 +595,10 @@ int32_t RogueSD::fileCount(const char *path, const char *filemask)
   {
     print(_prefix);
     print("LC ");
-    print(path);
-    if (filemask != NULL)
+    if (path != NULL)
+      print(path);
+
+    if (filemask != NULL && strlen(filemask) > 0)
     {
       if (strlen(path) && path[strlen(path) - 1] != '/')
       {
@@ -727,7 +729,7 @@ int8_t RogueSD::readDir(char *dest, const char *filemask)
 }
 
 
-int8_t RogueSD::entryToFilename(char *dest, uint8_t count, uint16_t entrynum, const char *filemask)
+int8_t RogueSD::entryToFilename(char *dest, uint8_t count, uint16_t entrynum, const char *path, const char *filemask)
 {
   char c;
   int8_t entrytype = TYPE_FILE;
@@ -739,10 +741,18 @@ int8_t RogueSD::entryToFilename(char *dest, uint8_t count, uint16_t entrynum, co
     print("LE ");
     print(entrynum, DEC);
     print(' ');
-    if (filemask)
+    if (path != NULL)
+      print(path);
+
+    if (filemask != NULL && strlen(filemask) > 0)
+    {
+      if (strlen(path) == 0 || path[strlen(path) - 1] != '/')
+      {
+        print('/');
+      }
       print(filemask);
-    else
-      print('*');
+    }
+
     print('\r');
 
     if (_getResponse())
@@ -1081,8 +1091,8 @@ int8_t RogueSD::seekToEnd(int8_t handle)
 }
 
 
-// Added for sending prog_char strings
-void RogueSD::print_P(const prog_char *str)
+// Added for sending PROGMEM strings
+void RogueSD::print_P(const char PROGMEM *str)
 {
   while (pgm_read_byte(str) != 0)
   {
@@ -1091,9 +1101,9 @@ void RogueSD::print_P(const prog_char *str)
 }
 
 
-/*************************************************
-* Public (virtual - required by Print)
-*************************************************/
+/*
+|| Public (virtual - required by Print)
+*/
 
 #if ARDUINO >= 100
 
@@ -1113,9 +1123,9 @@ void RogueSD::write(uint8_t c)
 #endif
 
 
-/*************************************************
-* Private Methods
-*************************************************/
+/*
+|| Private Methods
+*/
 
 int8_t RogueSD::_readBlocked(void)
 {
