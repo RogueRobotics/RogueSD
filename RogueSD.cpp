@@ -60,7 +60,7 @@
 */
 
 RogueSD::RogueSD(Stream &comms)
-  : LastErrorCode(0),
+  : lastErrorCode(0),
     _promptChar(DEFAULT_PROMPT),
     _fwVersion(0),
     _moduleType(uMMC),
@@ -172,7 +172,7 @@ int32_t RogueSD::cardInfo(uint8_t getSize)
   {
     _getResponse();
     // if we have an error, return -1
-    // error code is actually in .LastErrorCode
+    // error code is actually in .lastErrorCode
     datum = -1;
   }
 
@@ -213,8 +213,8 @@ int8_t RogueSD::getFreeHandle(void)
     resp -= '0';                        // got our handle
   else
   {
-    LastErrorCode = _getNumber(16);
-    if (LastErrorCode == ERROR_NO_FREE_FILES)
+    lastErrorCode = _getNumber(16);
+    if (lastErrorCode == ERROR_NO_FREE_FILES)
       resp = 0;
     else
       resp = -1;
@@ -276,7 +276,7 @@ fileInfo RogueSD::getFileInfo(int8_t handle)
   {
     _getResponse();
     // if we have an error, just return 0's
-    // error code is actually in .LastErrorCode
+    // error code is actually in .lastErrorCode
     fi.position = 0;
     fi.size = 0;
   }
@@ -294,7 +294,7 @@ int32_t RogueSD::size(const char *path)
   if (_fwLevel == 0)
   {
     // old
-    LastErrorCode = ERROR_NOT_SUPPORTED;
+    lastErrorCode = ERROR_NOT_SUPPORTED;
     return -1;
   }
 
@@ -303,7 +303,7 @@ int32_t RogueSD::size(const char *path)
   if (resp == TYPE_FOLDER)
   {
     // path is a folder
-    LastErrorCode = ERROR_NOT_A_FILE;
+    lastErrorCode = ERROR_NOT_A_FILE;
     return -1;
   }
   else if (resp == TYPE_FILE)
@@ -336,7 +336,7 @@ int32_t RogueSD::size(const char *path)
   else
   {
     // path does not exist
-    LastErrorCode = ERROR_FILE_DOES_NOT_EXIST;
+    lastErrorCode = ERROR_FILE_DOES_NOT_EXIST;
     return -1;
   }
 
@@ -611,7 +611,7 @@ int32_t RogueSD::fileCount(const char *path, const char *filemask)
   else
   {
     // old
-    LastErrorCode = ERROR_NOT_SUPPORTED;
+    lastErrorCode = ERROR_NOT_SUPPORTED;
     return -1;
   }
 }
@@ -636,7 +636,7 @@ int8_t RogueSD::openDir(const char *dirname)
   else
   {
     // old
-    LastErrorCode = ERROR_NOT_SUPPORTED;
+    lastErrorCode = ERROR_NOT_SUPPORTED;
     return -1;
   }
 }
@@ -700,7 +700,7 @@ int8_t RogueSD::readDir(char *dest, const char *filemask)
     else
     {
       // had an error
-      if (LastErrorCode == ERROR_EOF)
+      if (lastErrorCode == ERROR_EOF)
         return 0;
       else
         return -1;
@@ -709,7 +709,7 @@ int8_t RogueSD::readDir(char *dest, const char *filemask)
   else
   {
     // old
-    LastErrorCode = ERROR_NOT_SUPPORTED;
+    lastErrorCode = ERROR_NOT_SUPPORTED;
     return -1;
   }
 }
@@ -785,7 +785,7 @@ int8_t RogueSD::entryToFilename(char *dest, uint8_t count, uint16_t entrynum, co
   else
   {
     // old
-    LastErrorCode = ERROR_NOT_SUPPORTED;
+    lastErrorCode = ERROR_NOT_SUPPORTED;
     return -1;
   }
 }
@@ -843,7 +843,7 @@ int16_t RogueSD::readByte(int8_t handle)
   else
   {
     // had an error
-    if (LastErrorCode == ERROR_EOF)
+    if (lastErrorCode == ERROR_EOF)
       return -1;
     else
       return -2;
@@ -881,7 +881,7 @@ int16_t RogueSD::read(int8_t handle, uint16_t count, char *dest)
 
   if (!_getResponse())
   {
-    if (LastErrorCode == ERROR_EOF)
+    if (lastErrorCode == ERROR_EOF)
       return -1;
     else
       return -2;
@@ -912,7 +912,7 @@ int16_t RogueSD::readln(int8_t handle, uint16_t maxlength, char *dest)
 
   if (!_getResponse())
   {
-    if (LastErrorCode == ERROR_EOF)
+    if (lastErrorCode == ERROR_EOF)
       // EOF
       return -1;
     else
@@ -1147,7 +1147,7 @@ int8_t RogueSD::_getResponse(void)
   uint8_t r;
   uint8_t resp = 0;
 
-  // we will return 1 if all is good, 0 otherwise (LastErrorCode contains the response from the module)
+  // we will return 1 if all is good, 0 otherwise (lastErrorCode contains the response from the module)
 
   r = _readBlocked();
 
@@ -1156,7 +1156,7 @@ int8_t RogueSD::_getResponse(void)
 
   else if (r == 'E')
   {
-    LastErrorCode = _getNumber(16);     // get our error code
+    lastErrorCode = _getNumber(16);     // get our error code
     _readBlocked();                     // consume prompt
 
     resp = 0;
@@ -1164,7 +1164,7 @@ int8_t RogueSD::_getResponse(void)
 
   else
   {
-    LastErrorCode = 0xFF;               // something got messed up, a resync would be nice
+    lastErrorCode = 0xFF;               // something got messed up, a resync would be nice
     resp = 0;
   }
 

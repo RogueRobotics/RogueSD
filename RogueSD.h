@@ -143,7 +143,7 @@ class RogueSD : public Print
 {
   public:
     // properties
-    uint8_t LastErrorCode;
+    uint8_t lastErrorCode;
     moduleType getModuleType(void) { return _moduleType; }
     inline int16_t version(void) { return _fwVersion; }
 

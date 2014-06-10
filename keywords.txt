@@ -14,7 +14,7 @@ moduletype                     KEYWORD1
 # Methods and Functions (KEYWORD2)
 #######################################
 
-LastErrorCode                  KEYWORD2
+lastErrorCode                  KEYWORD2
 
 begin                          KEYWORD2
 changeSetting                  KEYWORD2
