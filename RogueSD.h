@@ -183,10 +183,10 @@ class RogueSD : public Print
     int8_t open(const char *path, openMode mode);
     int8_t open(int8_t handle, const char *path);
     int8_t open(int8_t handle, const char *path, openMode mode);
-    int8_t open_P(const char PROGMEM *path);
-    int8_t open_P(const char PROGMEM *path, openMode mode);
-    int8_t open_P(int8_t handle, const char PROGMEM *path);
-    int8_t open_P(int8_t handle, const char PROGMEM *path, openMode mode);
+    int8_t open_P(const char *path);
+    int8_t open_P(const char *path, openMode mode);
+    int8_t open_P(int8_t handle, const char *path);
+    int8_t open_P(int8_t handle, const char *path, openMode mode);
 
 
     // Close
@@ -201,7 +201,7 @@ class RogueSD : public Print
     int8_t entryToFilename(char *dest, uint8_t count, uint16_t entrynum, const char *folder = NULL, const char *filemask = NULL);
     int8_t rmDir(const char *path)
     {
-      remove(path);
+      return remove(path);
     }
 
 
@@ -251,7 +251,7 @@ class RogueSD : public Print
 
 
     // Helpers
-    void print_P(const char PROGMEM *str);
+    void print_P(const char *str);
 #if ARDUINO >= 100
     size_t write(uint8_t);
 #else

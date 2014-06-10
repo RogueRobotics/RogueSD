@@ -300,21 +300,13 @@ int32_t RogueSD::size(const char *path)
 
   resp = exists(path);
 
-  if (resp == 0)
-  {
-    // path does not exist
-    LastErrorCode = ERROR_FILE_DOES_NOT_EXIST;
-    return -1;
-  }
-
   if (resp == TYPE_FOLDER)
   {
     // path is a folder
     LastErrorCode = ERROR_NOT_A_FILE;
     return -1;
   }
-
-  if (resp == TYPE_FILE)
+  else if (resp == TYPE_FILE)
   {
     print(_prefix);
     print("L ");
@@ -326,19 +318,6 @@ int32_t RogueSD::size(const char *path)
       // we have the file info next
       while (!_commAvailable());
 
-/*
-      if (_commPeek() == 'D')
-      {
-        // If we get a 'D', in this case it means that we are listing the contents of a directory.
-        // we have a directory, file size = 0
-        _commRead();                    // consume 'D'
-      }
-      else
-      {
-        // it's a file, with a file size
-        filesize = _getNumber(10);
-      }
-*/
       filesize = _getNumber(10);
       
       // clear the rest
@@ -354,6 +333,13 @@ int32_t RogueSD::size(const char *path)
       return -1;
     }
   }
+  else
+  {
+    // path does not exist
+    LastErrorCode = ERROR_FILE_DOES_NOT_EXIST;
+    return -1;
+  }
+
 }
 
 
@@ -502,13 +488,13 @@ int8_t RogueSD::open_P(const char *path, openMode mode)
 }
 
 
-int8_t RogueSD::open_P(int8_t handle, const char PROGMEM *path)
+int8_t RogueSD::open_P(int8_t handle, const char *path)
 {
   return _open(handle, path, OPEN_READ, 1);
 }
 
 
-int8_t RogueSD::open_P(int8_t handle, const char PROGMEM *path, openMode mode)
+int8_t RogueSD::open_P(int8_t handle, const char *path, openMode mode)
 {
   return _open(handle, path, mode, 1);
 }
@@ -1092,7 +1078,7 @@ int8_t RogueSD::seekToEnd(int8_t handle)
 
 
 // Added for sending PROGMEM strings
-void RogueSD::print_P(const char PROGMEM *str)
+void RogueSD::print_P(const char *str)
 {
   while (pgm_read_byte(str) != 0)
   {
