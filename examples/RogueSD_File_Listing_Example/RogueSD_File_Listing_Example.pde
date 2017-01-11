@@ -30,14 +30,16 @@
 ||
 */
 
-#include <NewSoftSerial.h>
+#include <SoftwareSerial.h>
 #include <RogueSD.h>
+
+#define Constant(x) F(x)
 
 // This is the serial connection to the Rogue SD module.
 // We are using pins 6 and 7 in this example.
 const int roguesdRXPin = 6;
 const int roguesdTXPin = 7;
-NewSoftSerial rogueSerial = NewSoftSerial(roguesdRXPin, roguesdTXPin);
+SoftwareSerial rogueSerial = SoftwareSerial(roguesdRXPin, roguesdTXPin);
 
 // We connect the above serial object to the RogueSD object here.
 RogueSD roguesd = RogueSD(rogueSerial);
@@ -152,24 +154,24 @@ void setup()
     {
       // fileCount() failed, because card was ejected, or something else.
       Serial.print(Constant("fileCount failed: Error code E"));
-      if (roguesd.LastErrorCode < 16)
+      if (roguesd.lastErrorCode < 16)
         Serial.print('0');
-      Serial.println(roguesd.LastErrorCode, HEX);
+      Serial.println(roguesd.lastErrorCode, HEX);
     }
   }
   else
   {
     Serial.print(Constant("The fun stops here: "));
-    if (roguesd.LastErrorCode == ERROR_CARD_NOT_INSERTED)
+    if (roguesd.lastErrorCode == ERROR_CARD_NOT_INSERTED)
     {
       Serial.println(Constant("No card inserted."));
     }
     else
     {
       Serial.println(Constant("Error code E"));
-      if (roguesd.LastErrorCode < 16)
+      if (roguesd.lastErrorCode < 16)
         Serial.print('0');
-      Serial.println(roguesd.LastErrorCode, HEX);
+      Serial.println(roguesd.lastErrorCode, HEX);
     }
   }
 }

@@ -42,8 +42,10 @@
 ||
 */
 
-#include <NewSoftSerial.h>
+#include <SoftwareSerial.h>
 #include <RogueSD.h>
+
+#define Constant(x) F(x)
 
 #define ASCII_ESC 0x1b
 
@@ -51,7 +53,7 @@
 // We are using pins 6 and 7 in this example.
 const int roguesdRXPin = 6;
 const int roguesdTXPin = 7;
-NewSoftSerial rogueSerial = NewSoftSerial(roguesdRXPin, roguesdTXPin);
+SoftwareSerial rogueSerial = SoftwareSerial(roguesdRXPin, roguesdTXPin);
 
 // We connect the above serial object to the RogueSD object here.
 RogueSD roguesd = RogueSD(rogueSerial);
@@ -76,14 +78,15 @@ int16_t readTimeout(uint16_t timeout)
 
 int32_t rogueSDGetBitrate(void)
 {
-  LongTable bps = LongTable(115200, 57600, 38400, 19200, 9600, 4800, 2400);
+  uint32_t bps[] = { 115200, 57600, 38400, 19200, 9600, 4800, 2400 };
+  const int bpsCount = 7;
 
   // Loop variables
   uint8_t i, j;
   // Current bps to test
   int32_t testbps;
 
-  for (i = 0; i < bps.count(); i++)
+  for (i = 0; i < bpsCount; i++)
   {
     testbps = bps[i];
 
