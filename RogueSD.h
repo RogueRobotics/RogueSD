@@ -30,7 +30,7 @@
 
 // RogueSD version
 // @Version 2.0.0
-#define ROGUESD_VERSION                       10000
+#define ROGUESD_VERSION                       20000
 
 #include <avr/pgmspace.h>
 #include <stdint.h>

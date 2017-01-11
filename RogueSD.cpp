@@ -898,7 +898,8 @@ int16_t RogueSD::read(int8_t handle, uint16_t count, char *dest)
 
 int16_t RogueSD::readln(int8_t handle, uint16_t maxlength, char *dest)
 {
-  int8_t r, i;
+  int8_t r;
+  int16_t i;
 
   if (_fwLevel == 0)
     return -1;
